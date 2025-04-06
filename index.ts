@@ -121,7 +121,7 @@ app.post('/notify-achievement', authenticateRequest, upload.single('achievementI
     // The uploaded file details are in req.file (if upload was successful)
     const uploadedFile = req.file;
 
-    const { userName, achievementName, achievementDescription, iconSource } = payload;
+    const { userName, achievementName, achievementDescription, iconSource, discordUserId } = payload;
 
     // Basic validation
     if (!userName || !achievementName) {
@@ -152,7 +152,11 @@ app.post('/notify-achievement', authenticateRequest, upload.single('achievementI
         const embed = new EmbedBuilder()
             .setColor('#00FF00')
             .setTitle('🏆 Achievement Unlocked! 🎉')
-            .setDescription(`**${userName}** has unlocked the achievement: **${achievementName}**!`)
+            .setDescription(
+                discordUserId
+                    ? `<@${discordUserId}> has unlocked the achievement: **${achievementName}**!` // Mention if ID exists
+                    : `**${userName}** has unlocked the achievement: **${achievementName}**!` // Otherwise, just use name
+            )
             .setTimestamp(new Date());
 
         if (achievementDescription) {
@@ -177,6 +181,9 @@ app.post('/notify-achievement', authenticateRequest, upload.single('achievementI
 
 
         // --- Send the message with potential attachments ---
+        if (discordUserId) {
+            await channel.send(`<@${discordUserId}>: `);
+        }
         await channel.send({ embeds: [embed], files: filesToAttach }); // Send embeds AND files array
 
         console.log(`Successfully sent notification for ${userName} to Discord channel ${TARGET_CHANNEL_ID}`);
